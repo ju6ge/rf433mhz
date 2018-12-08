@@ -2,13 +2,13 @@
 #include "util.h"
 
 protocol_433mhz protocols_433mhz[] = {
-	{ 350, { 1, 31 }, { 1, 3 }, { 3, 1 }, false },			// protocol 1
-	{ 650, {  1, 10 }, {  1,  2 }, {  2,  1 }, false },		// protocol 2
-	{ 100, { 30, 71 }, {  4, 11 }, {  9,  6 }, false },		// protocol 3
-	{ 380, {  1,  6 }, {  1,  3 }, {  3,  1 }, false },		// protocol 4
-	{ 500, {  6, 14 }, {  1,  2 }, {  2,  1 }, false },		// protocol 5
-	{ 450, { 23,  1 }, {  1,  2 }, {  2,  1 }, true },		// protocol 6 (HT6P20B)
-	{ 150, {  2, 62 }, {  1,  6 }, {  6,  1 }, false }		// protocol 7 (HS2303-PT, i. e. used in AUKEY Remote)
+	{ { 1, 31 }, { 1, 3 }, { 3, 1 }, false },			// protocol 1
+	{ {  1, 10 }, {  1,  2 }, {  2,  1 }, false },		// protocol 2
+	{ { 30, 71 }, {  4, 11 }, {  9,  6 }, false },		// protocol 3
+	{ {  1,  6 }, {  1,  3 }, {  3,  1 }, false },		// protocol 4
+	{ {  6, 14 }, {  1,  2 }, {  2,  1 }, false },		// protocol 5
+	{ { 23,  1 }, {  1,  2 }, {  2,  1 }, true },		// protocol 6 (HT6P20B)
+	{ {  2, 62 }, {  1,  6 }, {  6,  1 }, false }		// protocol 7 (HS2303-PT, i. e. used in AUKEY Remote)
 };
 
 static inline unsigned int diff(int A, int B) {
@@ -16,14 +16,14 @@ static inline unsigned int diff(int A, int B) {
 }
 
 //Transmit single pulse meaning 1 or 0 or sync
-void transmit(uint8_t pin, protocol_433mhz* proto, pulse_t pulse_params) {
+void transmit(uint8_t pin, protocol_433mhz* proto, pulse_t pulse_params, uint16_t pulse_length) {
 	bool firstLogicLevel = proto->inverted ? 0 : 1;
 	bool secondLogicLevel = proto->inverted ? 1 : 0;
 
 	setPinDigital(pin, firstLogicLevel);
-	delayMicroSec(proto->pulse_length * pulse_params.high_time);
+	delayMicroSec(pulse_length * pulse_params.high_time);
 	setPinDigital(pin, secondLogicLevel);
-	delayMicroSec(proto->pulse_length * pulse_params.low_time);
+	delayMicroSec(pulse_length * pulse_params.low_time);
 }
 
 void send_message_433mhz(uint8_t pin, message_433mhz* msg) {
@@ -31,12 +31,12 @@ void send_message_433mhz(uint8_t pin, message_433mhz* msg) {
 	for (uint8_t n_repeat=0; n_repeat < msg->repeat; n_repeat++) {
 		for(int i = msg->code_lenght-1; i>=0; i--) {
 			if ( msg->data & (1L << i) ) {
-				transmit(pin, msg->protocol, msg->protocol->one);
+				transmit(pin, msg->protocol, msg->protocol->one, msg->pulse_length);
 			} else {
-				transmit(pin, msg->protocol, msg->protocol->zero);
+				transmit(pin, msg->protocol, msg->protocol->zero, msg->pulse_length);
 			}
 		}
-		transmit(pin, msg->protocol, msg->protocol->sync);
+		transmit(pin, msg->protocol, msg->protocol->sync, msg->pulse_length);
 	}
 	//make sure antenna is powered off 
 	setPinDigital(pin, 0);
@@ -107,6 +107,7 @@ bool decode_recieved(reciever_433mhz* reciever, protocol_433mhz* proto, message_
 	if (reciever->changeCount > 7) {
 		msg->code_lenght = (reciever->changeCount -1)/2;
 		msg->protocol = proto;
+		msg->pulse_length = delay;
 		return true;
 	}
 	return false;

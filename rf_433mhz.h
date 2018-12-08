@@ -20,7 +20,6 @@ typedef struct{
 } pulse_t;
 
 typedef struct{
-	uint16_t pulse_length;
 	pulse_t sync;
 	pulse_t zero;
 	pulse_t one;
@@ -28,9 +27,10 @@ typedef struct{
 } protocol_433mhz;
 
 typedef struct{
-	unsigned long data;
+	uint32_t data;
 	unsigned int code_lenght;
 	protocol_433mhz* protocol;
+	uint16_t pulse_length;
 	uint8_t repeat;
 } message_433mhz;
 
