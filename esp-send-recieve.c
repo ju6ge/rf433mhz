@@ -21,8 +21,8 @@ void rf433mhz_transmit(void *pvParameters) {
 	message_433mhz msg;
 	msg.code_lenght=24;
 	msg.repeat=2;
+	msg.pulse_length = 312;
 	protocol_433mhz proto = protocols_433mhz[PROTO1];
-	proto.pulse_length = 312;
 	msg.protocol = &proto;
 
 	while(true) {
@@ -36,15 +36,19 @@ void rf433mhz_transmit(void *pvParameters) {
 }
 
 void recieve_interrupt_handler(uint8_t gpio_num) {
+	BaseType_t xHigerPriorityTaskTriggerd = pdFALSE;
+	UBaseType_t uxSavedInterruptStatus;
+	uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 	recieve_on_interrupt(reciever);
 	if (reciever->repeatCount < 2) {
+		taskEXIT_CRITICAL_FROM_ISR(uxSavedInterruptStatus);
 		return;
 	}
-	taskENTER_CRITICAL();
+	//printf("Function recieve_interrupt_handler recieved going enter critical \n");
 	reciever_433mhz* old_reciever = reciever;
 	reciever = create_reciever_buffer();
-	taskEXIT_CRITICAL();
-	xQueueSend(decode_queue, &old_reciever, 0);
+	taskEXIT_CRITICAL_FROM_ISR(uxSavedInterruptStatus);
+	xQueueSendFromISR(decode_queue, &old_reciever, &xHigerPriorityTaskTriggerd);
 }
 
 void rf433mhz_recieve(void *pvParameters) {
