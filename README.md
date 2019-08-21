@@ -2,9 +2,10 @@ rf433hmz - A Copyright (c) 2018 Felix Richter <judge@felixrichter.tech>
 
 # About
 
-This is a simple c library which implements encoding and decoding of various rf protocols for sending and recieving rf transmissions.
-It is heavly based on the RC Switch library. It is designed to be used with the esp8266 using open rtos, but it should be very easy to port
-to other platforms.
+This is a simple c library which implements encoding and decoding of various rf protocols for sending and recieving rf transmissions. It is heavly based on the RC Switch library. It is designed to be used with the esp8266 using open rtos, but it should be very easy to port to other platforms (by changing the api call in util.h to the ones that your environment provides).
+
+# Notes
+Although this code works, it should be noted that the ESP8266 is not an extremly powerfull chip and since this code relies on the CPU to do the recording of the signal length via interrupt and then decoding the signals it takes a lot of CPU time, which will lead to watchdog resets if you are tring to do more stuff at once.
 
 # License
 
